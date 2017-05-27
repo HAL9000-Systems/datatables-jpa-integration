@@ -84,7 +84,7 @@ public class DataTableQueryBuilder<T> {
 				
 				ArrayList<Order> orders = new ArrayList<Order>();
 				
-				this.request.getOrder().forEach(tableOrder -> orders.add(this.createOrderConditionOrderForColumn(this.request.getColumns().get(tableOrder.getColumn()), tableOrder)));
+				this.request.getOrder().forEach(tableOrder -> orders.add(this.createColumnFilterCondition(this.request.getColumns().get(tableOrder.getColumn()), tableOrder)));
 				this.getCriteriaQuery().orderBy(orders);
 			}
 		}
@@ -92,30 +92,25 @@ public class DataTableQueryBuilder<T> {
 		return this;
 	}
 	
-	private Order createOrderConditionOrderForColumn(Column column, TableOrder order) {
+	private Order createColumnFilterCondition(Column column, TableOrder order) {
 		
-		if (column.getOrderable()) {
+		String columnName = ("".equals(column.getName())) ? column.getData() : column.getName();
+		
+		if (columnName.contains(".")) {
 			
-			String columnName = ("".equals(column.getName())) ? column.getData() : column.getName();
+			String propertyName = columnName.split("\\.")[0];
+			String propertyAttrib = columnName.split("\\.")[1];
+			String propertyNameAlias = propertyName + "_alias";
 			
-			if (columnName.contains(".")) {
-				
-				String propertyName = columnName.split("\\.")[0];
-				String propertyAttrib = columnName.split("\\.")[1];
-				String propertyNameAlias = propertyName + "_alias";
-				
-				this.getRoot().join(propertyName).alias(propertyNameAlias);
-				
-				columnName = propertyNameAlias + "." + propertyAttrib;
-			}
+			this.getRoot().join(propertyName).alias(propertyNameAlias);
 			
-			if ("ASC".equalsIgnoreCase(order.getDir()))
-				return this.getCriteriaBuilder().asc(this.getRoot().get(columnName));
-			else
-				return this.getCriteriaBuilder().desc(this.getRoot().get(columnName));
+			columnName = propertyNameAlias + "." + propertyAttrib;
 		}
 		
-		return null;
+		if ("ASC".equalsIgnoreCase(order.getDir()))
+			return this.getCriteriaBuilder().asc(this.getRoot().get(columnName));
+		else
+			return this.getCriteriaBuilder().desc(this.getRoot().get(columnName));
 	}
 	//TODO tiene sentido que siga siendo public?
 	public DataTableQueryBuilder<T> setPage() {
