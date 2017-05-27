@@ -73,7 +73,7 @@ public class DataTableQueryBuilder<T> {
 			columnName = propertyNameAlias + "." + propertyAttrib;
 		}
 		
-		return this.getCriteriaBuilder().like(this.getRoot().get(columnName), "%" + value + "%");
+		return this.getCriteriaBuilder().like(this.getCriteriaBuilder().lower(this.getRoot().get(columnName)), "%" + value.toLowerCase() + "%");
 	}
 	//TODO tiene sentido que siga siendo public?
 	public DataTableQueryBuilder<T> addOrders() {
