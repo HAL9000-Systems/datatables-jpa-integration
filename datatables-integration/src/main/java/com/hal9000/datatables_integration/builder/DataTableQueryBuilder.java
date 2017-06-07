@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.hal9000.datatables_integration.query;
+package com.hal9000.datatables_integration.builder;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
@@ -30,50 +30,78 @@ public class DataTableQueryBuilder<T> {
 	private CriteriaQuery<T> criteriaQuery;
 	private Root<T> root;
 	private CriteriaBuilder criteriaBuilder;
-	private EntityManager entityManager;
 	private TypedQuery<T> typedQuery;
-	private final Class<T> persistentClass;
+	private Class<T> persistentClass;
+	private EntityManager entityManager;
+	
+	private DataTableQueryBuilder() {
+		
+	}
+	
+	
+	public DataTableQueryBuilder(CriteriaBuilder criteriaBuilder, DataTableRequest request, Class<T> persistentClass) {
+		this.request = request;
+		this.criteriaBuilder = criteriaBuilder;
+		this.persistentClass = persistentClass;
+	}
 	
 	@SuppressWarnings("unchecked")
 	public DataTableQueryBuilder(EntityManager entityManager, DataTableRequest request) {
 		this.request = request;
 		this.entityManager = entityManager;
-		this.persistentClass = (Class<T>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+		//this.persistentClass = (Class<T>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+		this.persistentClass = (Class<T>) ((ParameterizedType) (new DataTableQueryBuilder<T>(){}).getClass().getGenericSuperclass()).getActualTypeArguments()[0];
 	}
 	//TODO tiene sentido que siga siendo public?
 	public DataTableQueryBuilder<T> addFilters() {
 		
-		if (this.request.getSearch().getValue() != null && !this.request.getSearch().getValue().equals("") && request.getColumns() != null && !request.getColumns().isEmpty()) {
-			//Logica para armar el where
+		if (request.getColumns() != null && !request.getColumns().isEmpty()) {
+			
 			List<Column> searchableColumns = request.getColumns().stream().filter(tableColumn -> tableColumn.getSearchable()).collect(Collectors.toList());
 			
-			if (searchableColumns != null && !searchableColumns.isEmpty()) {
-				
-				ArrayList<Predicate> restrictions = new ArrayList<Predicate>();
-				searchableColumns.forEach(tableColumn -> restrictions.add(this.createColumnFilterCondition(tableColumn, this.request.getSearch().getValue())));
-				this.getCriteriaQuery().where(this.criteriaBuilder.or((Predicate[]) restrictions.toArray()));
+			if (this.request.getSearch().getValue() != null && !this.request.getSearch().getValue().equals("")) {
+			
+				if (searchableColumns != null && !searchableColumns.isEmpty()) {
+					
+					//Logica para armar el where comun para todas las columnas
+					ArrayList<Predicate> restrictions = new ArrayList<Predicate>();
+					searchableColumns.forEach(tableColumn -> restrictions.add(this.createColumnFilterCondition(tableColumn, this.request.getSearch().getValue())));
+					this.getCriteriaQuery().where(this.criteriaBuilder.or((Predicate[]) restrictions.toArray()));
+				}
+				else {
+					
+					//Logica para armar el where individual por columna
+					ArrayList<Predicate> restrictions = new ArrayList<Predicate>();
+					searchableColumns.forEach(tableColumn -> restrictions.add(this.createColumnFilterCondition(tableColumn, tableColumn.getSearch().getValue())));
+					this.getCriteriaQuery().where(this.criteriaBuilder.or((Predicate[]) restrictions.toArray()));
+				}
 			}
 		}
 		
 		return this;
 	}
-	//TODO hacer esto case insensitive
+	
 	private Predicate createColumnFilterCondition(Column column, String value) {
 		
-		String columnName = ("".equals(column.getName())) ? column.getData() : column.getName();
-		
-		if (columnName.contains(".")) {
+		if (value != null && !value.isEmpty()) {
 			
-			String propertyName = columnName.split("\\.")[0];
-			String propertyAttrib = columnName.split("\\.")[1];
-			String propertyNameAlias = propertyName + "_alias";
+			String columnName = ("".equals(column.getName())) ? column.getData() : column.getName();
 			
-			this.getRoot().join(propertyName).alias(propertyNameAlias);
+			if (columnName.contains(".")) {
+				
+				String propertyName = columnName.split("\\.")[0];
+				String propertyAttrib = columnName.split("\\.")[1];
+				String propertyNameAlias = propertyName + "_alias";
+				
+				this.getRoot().join(propertyName).alias(propertyNameAlias);
+				
+				columnName = propertyNameAlias + "." + propertyAttrib;
+			}
 			
-			columnName = propertyNameAlias + "." + propertyAttrib;
+			return this.getCriteriaBuilder().like(this.getCriteriaBuilder().lower(this.getRoot().get(columnName)), "%" + value.toLowerCase() + "%");
 		}
 		
-		return this.getCriteriaBuilder().like(this.getCriteriaBuilder().lower(this.getRoot().get(columnName)), "%" + value.toLowerCase() + "%");
+		return null;
 	}
 	//TODO tiene sentido que siga siendo public?
 	public DataTableQueryBuilder<T> addOrders() {

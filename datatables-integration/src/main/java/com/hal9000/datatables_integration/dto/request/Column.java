@@ -48,6 +48,10 @@ public class Column implements Serializable {
 		this.data = data;
 	}
 	
+	public Search getSearch() {
+		return this.search;
+	}
+	
 	public void setSearchValue(String searchValue) {
 		this.search.setValue(searchValue);
 	}
