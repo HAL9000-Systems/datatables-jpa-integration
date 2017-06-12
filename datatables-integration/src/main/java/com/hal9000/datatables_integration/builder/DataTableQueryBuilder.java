@@ -98,7 +98,7 @@ public class DataTableQueryBuilder<T> {
 				columnName = propertyNameAlias + "." + propertyAttrib;
 			}
 			
-			return this.getCriteriaBuilder().like(this.getCriteriaBuilder().lower(this.getRoot().get(columnName)), "%" + value.toLowerCase() + "%");
+			return this.getCriteriaBuilder().like(this.getCriteriaBuilder().lower(this.getCriteriaBuilder().toString(this.getRoot().get(columnName))), "%" + value.toLowerCase() + "%");
 		}
 		
 		return null;
