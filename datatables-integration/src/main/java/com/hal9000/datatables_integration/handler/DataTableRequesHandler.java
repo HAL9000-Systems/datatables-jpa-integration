@@ -1,6 +1,7 @@
 package com.hal9000.datatables_integration.handler;
 
-//import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.ParameterizedType;
+import java.util.List;
 
 import javax.persistence.EntityManager;
 
@@ -8,16 +9,23 @@ import com.hal9000.datatables_integration.builder.DataTableQueryBuilder;
 import com.hal9000.datatables_integration.dto.request.DataTableRequest;
 import com.hal9000.datatables_integration.dto.response.DataTableResponse;
 
-public class DataTableRequesHandler<T> {
+public abstract class DataTableRequesHandler<T> {
 	
-	private EntityManager entityManager;
-	private Class<T> persistentClass;
-	private DataTableQueryBuilder<T> queryBuilder;
+	protected EntityManager entityManager;
+	protected Class<T> persistentClass;
+	protected DataTableQueryBuilder<T> queryBuilder;
 	
-	public DataTableRequesHandler(EntityManager entityManager, Class<T> persistentClass) {
+	@SuppressWarnings("unchecked")
+	public DataTableRequesHandler() {
+		
+		this.persistentClass =(Class<T>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+	}
+	
+	@SuppressWarnings("unchecked")
+	public DataTableRequesHandler(EntityManager entityManager) {
 		
 		this.entityManager = entityManager;
-		this.persistentClass = persistentClass;
+		this.persistentClass =(Class<T>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
 	}
 	
 	public DataTableResponse<T> handleRequest(DataTableRequest request) {
@@ -26,16 +34,27 @@ public class DataTableRequesHandler<T> {
 		
 		DataTableResponse<T> response = new DataTableResponse<T>();
 		
-		response.setDraw(request.getDraw());
-		response.setRecordsTotal(this.queryBuilder.getTotalRowCount());;
-		
-		this.queryBuilder.addFilters().addOrders();
-		
-		response.setRecordsFiltered(this.queryBuilder.getFilterRowCount());
-		
-		this.queryBuilder.setPage();
-		response.setData(this.queryBuilder.buildQuery().getResultList());
+		response.setDraw(this.getDraw(request));
+		response.setRecordsTotal(this.getTotalRowCount(request));
+		response.setRecordsFiltered(this.getFilterRowCount(request));
+		response.setData(this.getPageData(request));
 		
 		return response;
+	}
+	
+	public Integer getDraw(DataTableRequest request) {
+		return request.getDraw();
+	}
+	
+	public Long getTotalRowCount(DataTableRequest request) {
+		return this.queryBuilder.getTotalRowCount();
+	}
+	
+	public Long getFilterRowCount(DataTableRequest request) {
+		return this.queryBuilder.getFilterRowCount();
+	}
+	
+	public List<T> getPageData(DataTableRequest request) {
+		return this.queryBuilder.addFilters().addOrders().setPage().buildQuery().getResultList();
 	}
 }
