@@ -6,7 +6,6 @@ DATATABLES JPA2 Integration.
 
 * Integration to use datatable with JPA2
 * 1.0.0
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
 
 ### How do I get set up? ###
 
