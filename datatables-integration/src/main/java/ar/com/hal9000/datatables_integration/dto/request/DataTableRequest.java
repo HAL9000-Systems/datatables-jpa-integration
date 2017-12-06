@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.hal9000.datatables_integration.dto.request;
+package ar.com.hal9000.datatables_integration.dto.request;
 
 import java.io.Serializable;
 import java.util.ArrayList;

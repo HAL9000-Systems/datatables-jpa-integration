@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.hal9000.datatables_integration.builder;
+package ar.com.hal9000.datatables_integration.builder;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -17,9 +17,9 @@ import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
-import com.hal9000.datatables_integration.dto.request.Column;
-import com.hal9000.datatables_integration.dto.request.DataTableRequest;
-import com.hal9000.datatables_integration.dto.request.TableOrder;
+import ar.com.hal9000.datatables_integration.dto.request.Column;
+import ar.com.hal9000.datatables_integration.dto.request.DataTableRequest;
+import ar.com.hal9000.datatables_integration.dto.request.TableOrder;
 
 /**
  * @author gabriel

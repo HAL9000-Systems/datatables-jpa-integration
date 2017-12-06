@@ -1,13 +1,13 @@
-package com.hal9000.datatables_integration.handler;
+package ar.com.hal9000.datatables_integration.handler;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
 
 import javax.persistence.EntityManager;
 
-import com.hal9000.datatables_integration.builder.DataTableQueryBuilder;
-import com.hal9000.datatables_integration.dto.request.DataTableRequest;
-import com.hal9000.datatables_integration.dto.response.DataTableResponse;
+import ar.com.hal9000.datatables_integration.builder.DataTableQueryBuilder;
+import ar.com.hal9000.datatables_integration.dto.request.DataTableRequest;
+import ar.com.hal9000.datatables_integration.dto.response.DataTableResponse;
 
 public abstract class DataTableRequesHandler<T> {
 	
