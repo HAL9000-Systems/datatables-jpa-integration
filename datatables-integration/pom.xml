@@ -4,23 +4,54 @@
 	
 	<groupId>ar.com.hal9000</groupId>
 	<artifactId>datatables-integration</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 	<packaging>jar</packaging>
 	
 	<name>datatables-integration</name>
 	<description>Datatables Server Side Processing Integration</description>
 	<url>http://maven.apache.org</url>
 	
+	<organization>
+		<name>HAL|9000 Systems</name>
+		<url>http://hal9000.com.ar</url>
+	</organization>
+	
+	<developers>
+		<developer>
+			<id>gabrieleguia</id>
+			<name>Gabriel Eguia</name>
+			<email>gabrieleguia@gmail.com</email>
+			<roles>
+				<role>architect</role>
+				<role>developer</role>
+			</roles>
+			<timezone>America/Buenos Aires</timezone>
+		</developer>
+		<developer>
+			<id>saulomano</id>
+			<name>Saulo Manograsso</name>
+			<email>saulo.manograsso@gmail.com</email>
+			<roles>
+				<role>architect</role>
+				<role>developer</role>
+			</roles>
+			<timezone>America/Buenos Aires</timezone>
+		</developer>
+	</developers>
+	
 	<licenses>
 		<license>
 			<name>Apache License, Version 2.0</name>
 			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
 			<distribution>repo</distribution>
+			<comments>A simple datatables JPA Integration</comments>
 		</license>
 	</licenses>
 	
 	<scm>
-		<url>https://svn.apache.org/viewvc/maven</url>
+		<connection>scm:git:git://github.com/hal9000sys/datatables-jpa-integration.git</connection>
+		<developerConnection>scm:git:ssh://github.com/hal9000sys/datatables-jpa-integration.git</developerConnection>
+		<url>https://github.com/hal9000sys/datatables-jpa-integration</url>
 	</scm>
 	
 	<properties>
@@ -49,6 +80,7 @@
 			<version>7.0</version>
 		</dependency>
 	</dependencies>
+	
 	<distributionManagement>
 		<snapshotRepository>
 			<id>ossrh</id>
@@ -59,6 +91,7 @@
 			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
 		</repository>
 	</distributionManagement>
+	
 	<build>
 		<plugins>
 			<plugin>
@@ -72,9 +105,49 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.0.1</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.0.0</version>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>1.6</version>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>1.6.7</version>
+				<version>1.6.8</version>
 				<extensions>true</extensions>
 				<configuration>
 					<serverId>ossrh</serverId>
