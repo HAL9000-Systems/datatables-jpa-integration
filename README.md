@@ -5,7 +5,7 @@ DATATABLES JPA2 Integration.
 ### What is this repository for? ###
 
 * Integration library to use [Datatables](https://www.datatables.net) with JPA2
-* 1.0.1
+* 1.0.2
 
 ### Dependencies
  * Java >= 8
@@ -19,7 +19,7 @@ DATATABLES JPA2 Integration.
 <dependency>
     <groupId>ar.com.hal9000</groupId>
     <artifactId>datatables-integration</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
