@@ -42,8 +42,7 @@ public class DataTableQueryBuilder<T> {
 		this.persistentClass = persistentClass;
 	}
 	
-	//TODO tiene sentido que siga siendo public?
-	public DataTableQueryBuilder<T> addFilters() {
+	private DataTableQueryBuilder<T> addFilters() {
 		
 		if (request.getColumns() != null && !request.getColumns().isEmpty()) {
 			
@@ -111,8 +110,8 @@ public class DataTableQueryBuilder<T> {
 		
 		return null;
 	}
-	//TODO tiene sentido que siga siendo public?
-	public DataTableQueryBuilder<T> addOrders() {
+	
+	private DataTableQueryBuilder<T> addOrders() {
 		
 		if(this.request.getOrder() != null && !this.request.getOrder().isEmpty()) {
 			//Logica para armar el order by
@@ -150,7 +149,8 @@ public class DataTableQueryBuilder<T> {
 			return this.getCriteriaBuilder().desc(this.getRoot().get(columnName));
 	}
 	
-	public DataTableQueryBuilder<T> addGroupBy() {
+	@SuppressWarnings("unused")
+	private DataTableQueryBuilder<T> addGroupBy() {
 		
 		if(this.request.getOrder() != null && !this.request.getOrder().isEmpty()) {
 			//Logica para armar el order by
@@ -186,8 +186,7 @@ public class DataTableQueryBuilder<T> {
 		return this.getRoot().get("columnName");
 	}
 	
-	//TODO tiene sentido que siga siendo public?
-	public DataTableQueryBuilder<T> setPage() {
+	private DataTableQueryBuilder<T> setPage() {
 		
 		this.getTypedQuery().setFirstResult(this.request.getStart() != null ? this.request.getStart() : 0).setMaxResults(this.request.getLength() != null ? this.request.getLength() : 100);
 		return this;
