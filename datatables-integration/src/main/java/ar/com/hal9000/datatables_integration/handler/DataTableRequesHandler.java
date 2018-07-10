@@ -55,6 +55,6 @@ public abstract class DataTableRequesHandler<T> {
 	}
 	
 	public List<T> getPageData(DataTableRequest request) {
-		return this.queryBuilder.addFilters().addOrders().setPage().buildQuery().getResultList();
+		return this.queryBuilder.buildQuery().getResultList();
 	}
 }

@@ -4,7 +4,6 @@
 package ar.com.hal9000.datatables_integration.builder;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -13,6 +12,8 @@ import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Expression;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
@@ -42,8 +43,7 @@ public class DataTableQueryBuilder<T> {
 		this.persistentClass = persistentClass;
 	}
 	
-	//TODO tiene sentido que siga siendo public?
-	public DataTableQueryBuilder<T> addFilters() {
+	private DataTableQueryBuilder<T> addFilters() {
 		
 		if (request.getColumns() != null && !request.getColumns().isEmpty()) {
 			
@@ -51,7 +51,7 @@ public class DataTableQueryBuilder<T> {
 			ArrayList<Predicate> whereConditions = this.createFilters(searchableColumns, this.getRoot());
 			
 			if (whereConditions != null && !whereConditions.isEmpty())
-				this.getCriteriaQuery().where(this.criteriaBuilder.or(whereConditions.toArray(new Predicate[0])));
+				this.getCriteriaQuery().where(this.criteriaBuilder.or(whereConditions.toArray(new Predicate[whereConditions.size()])));
 		}
 		
 		return this;
@@ -68,11 +68,12 @@ public class DataTableQueryBuilder<T> {
 			if (request.getSearch().getValue() != null && !request.getSearch().getValue().equals(""))
 				globalSearchValue = request.getSearch().getValue();
 			
-			Iterator<Column> i = searchableColumns.iterator();
+			//Iterator<Column> i = searchableColumns.iterator();
 			
-			while (i.hasNext()) {
+			//while (i.hasNext()) {
+			for (Column tableColumn : searchableColumns) {
 				
-				Column tableColumn = i.next();
+				//Column tableColumn = i.next();
 				String searchValue = null;
 				
 				if (globalSearchValue != null)
@@ -80,8 +81,13 @@ public class DataTableQueryBuilder<T> {
 				else
 					searchValue = tableColumn.getSearch().getValue();
 				
-				if (searchValue != null && !searchValue.equals(""))
-					restrictions.add(this.createColumnFilterCondition(root, tableColumn, searchValue));
+				if (searchValue != null && !searchValue.equals("")) {
+					
+					Predicate predicate = this.createColumnFilterCondition(root, tableColumn, searchValue);
+				
+					if (predicate != null)
+						restrictions.add(predicate);
+				}
 			}
 		}
 		
@@ -90,29 +96,41 @@ public class DataTableQueryBuilder<T> {
 	
 	private Predicate createColumnFilterCondition(Root<T> root, Column column, String value) {
 		
+		Predicate predicate = null;
+		
 		if (value != null && !value.isEmpty()) {
 			
-			//String columnName = ("".equals(column.getName())) ? column.getData() : column.getName();
 			String columnName = !column.getData().matches("\\d+") ? column.getData() : column.getName();
 			
-			if (columnName.contains(".")) {
+			if (columnName != null && !columnName.isEmpty()) {
 				
-				String propertyName = columnName.split("\\.")[0];
-				String propertyAttrib = columnName.split("\\.")[1];
-				String propertyNameAlias = propertyName + "_alias";
+				Expression<String> expression = null;
 				
-				this.getRoot().join(propertyName).alias(propertyNameAlias);
+				if (columnName.contains(".")) {
+					
+					Join<?, ?> join = null;
+					String[] parts = columnName.split("\\.");
+					
+					for (int i = 0; i < parts.length; i++) {
+						
+						if (i < parts.length - 1)
+							join = (join == null) ? root.join(parts[i], JoinType.LEFT) : join.join(parts[i], JoinType.LEFT);
+						else if (join != null)
+							expression = join.get(parts[i]);
+					}
+				}
+				else {
+					expression = root.get(columnName);
+				}
 				
-				columnName = propertyNameAlias + "." + propertyAttrib;
+				predicate = this.getCriteriaBuilder().like(this.getCriteriaBuilder().lower(expression.as(String.class)), "%" + value.toLowerCase() + "%");
 			}
-			
-			return this.getCriteriaBuilder().like(this.getCriteriaBuilder().lower(this.getCriteriaBuilder().toString(root.get(columnName))), "%" + value.toLowerCase() + "%");
 		}
 		
-		return null;
+		return predicate;
 	}
-	//TODO tiene sentido que siga siendo public?
-	public DataTableQueryBuilder<T> addOrders() {
+	
+	private DataTableQueryBuilder<T> addOrders() {
 		
 		if(this.request.getOrder() != null && !this.request.getOrder().isEmpty()) {
 			//Logica para armar el order by
@@ -120,7 +138,14 @@ public class DataTableQueryBuilder<T> {
 				
 				ArrayList<Order> orders = new ArrayList<Order>();
 				
-				this.request.getOrder().forEach(tableOrder -> orders.add(this.createColumnOrderCondition(this.request.getColumns().get(tableOrder.getColumn()), tableOrder)));
+				this.request.getOrder().forEach(tableOrder -> {
+					
+					Order order = this.createColumnOrderCondition(this.request.getColumns().get(tableOrder.getColumn()), tableOrder);
+					
+					if (order != null)
+						orders.add(order);
+				});
+				
 				this.getCriteriaQuery().orderBy(orders);
 			}
 		}
@@ -130,27 +155,41 @@ public class DataTableQueryBuilder<T> {
 	
 	private Order createColumnOrderCondition(Column column, TableOrder order) {
 		
-		//String columnName = ("".equals(column.getName())) ? column.getData() : column.getName();
+		Order orderBy = null; 
 		String columnName = !column.getData().matches("\\d+") ? column.getData() : column.getName();
 		
-		if (columnName.contains(".")) {
+		if (columnName != null && !columnName.isEmpty()) {
 			
-			String propertyName = columnName.split("\\.")[0];
-			String propertyAttrib = columnName.split("\\.")[1];
-			String propertyNameAlias = propertyName + "_alias";
+			Expression<String> expression = null;
 			
-			this.getRoot().join(propertyName).alias(propertyNameAlias);
+			if (columnName.contains(".")) {
+				
+				Join<?, ?> join = null;
+				String[] parts = columnName.split("\\.");
+				
+				for (int i = 0; i < parts.length; i++) {
+					
+					if (i < parts.length - 1)
+						join = (join == null) ? root.join(parts[i], JoinType.LEFT) : join.join(parts[i], JoinType.LEFT);
+					else if (join != null)
+						expression = join.get(parts[i]);
+				}
+			}
+			else {
+				expression = root.get(columnName);
+			}
 			
-			columnName = propertyNameAlias + "." + propertyAttrib;
+			if ("ASC".equalsIgnoreCase(order.getDir()))
+				orderBy = this.getCriteriaBuilder().asc(expression);
+			else
+				orderBy = this.getCriteriaBuilder().desc(expression);
 		}
 		
-		if ("ASC".equalsIgnoreCase(order.getDir()))
-			return this.getCriteriaBuilder().asc(this.getRoot().get(columnName));
-		else
-			return this.getCriteriaBuilder().desc(this.getRoot().get(columnName));
+		return orderBy;
 	}
 	
-	public DataTableQueryBuilder<T> addGroupBy() {
+	@SuppressWarnings("unused")
+	private DataTableQueryBuilder<T> addGroupBy() {
 		
 		if(this.request.getOrder() != null && !this.request.getOrder().isEmpty()) {
 			//Logica para armar el order by
@@ -158,7 +197,14 @@ public class DataTableQueryBuilder<T> {
 				
 				ArrayList<Expression<?>> groupByConditions = new ArrayList<>();
 				
-				this.request.getOrder().forEach(tableOrder -> groupByConditions.add(this.addGroupByForColumn(this.request.getColumns().get(tableOrder.getColumn()))));
+				this.request.getOrder().forEach(tableOrder -> {
+					
+					Expression<?> groupBy = this.addGroupByForColumn(this.request.getColumns().get(tableOrder.getColumn()));
+					
+					if (groupBy != null)
+						groupByConditions.add(groupBy);
+				});
+				
 				this.getCriteriaQuery().groupBy(groupByConditions);
 			}
 		}
@@ -168,26 +214,33 @@ public class DataTableQueryBuilder<T> {
 	
 	private Expression<?> addGroupByForColumn(Column column) {
 		
-		//OJO aca se calcular distinto el nombre de la columna xq al ir por el Entity Manager se usa el nombre del atributo Java
-		//String columnName = ("".equals(column.getName())) ? column.getData() : column.getName();
+		Expression<?> groupBy = null; 
 		String columnName = !column.getData().matches("\\d+") ? column.getData() : column.getName();
 		
-		if (columnName.contains(".")) {
+		if (columnName != null && !columnName.isEmpty()) {
 			
-			String propertyName = columnName.split("\\.")[0];
-			String propertyAttrib = columnName.split("\\.")[1];
-			String propertyNameAlias = propertyName + "_alias";
-			
-			this.getRoot().join(propertyName).alias(propertyNameAlias);
-			
-			columnName = propertyNameAlias + "." + propertyAttrib;
+			if (columnName.contains(".")) {
+				
+				Join<?, ?> join = null;
+				String[] parts = columnName.split("\\.");
+				
+				for (int i = 0; i < parts.length; i++) {
+					
+					if (i < parts.length - 1)
+						join = (join == null) ? root.join(parts[i], JoinType.LEFT) : join.join(parts[i], JoinType.LEFT);
+					else if (join != null)
+						groupBy = join.get(parts[i]);
+				}
+			}
+			else {
+				groupBy = root.get(columnName);
+			}
 		}
 		
-		return this.getRoot().get("columnName");
+		return groupBy;
 	}
 	
-	//TODO tiene sentido que siga siendo public?
-	public DataTableQueryBuilder<T> setPage() {
+	private DataTableQueryBuilder<T> setPage() {
 		
 		this.getTypedQuery().setFirstResult(this.request.getStart() != null ? this.request.getStart() : 0).setMaxResults(this.request.getLength() != null ? this.request.getLength() : 100);
 		return this;
@@ -197,7 +250,7 @@ public class DataTableQueryBuilder<T> {
 		
 		CriteriaQuery<Long> query = this.getCriteriaBuilder().createQuery(Long.class);
 		Root<T> root = query.from(this.persistentClass);
-		query.select(this.criteriaBuilder.count(root));
+		query.select(this.getCriteriaBuilder().count(root));
 		return this.entityManager.createQuery(query).getSingleResult();
 	}
 	
@@ -206,15 +259,15 @@ public class DataTableQueryBuilder<T> {
 		
 		CriteriaQuery<Long> query = this.getCriteriaBuilder().createQuery(Long.class);
 		Root<T> root = query.from(this.persistentClass);
-		query.select(this.criteriaBuilder.count(root));
+		query.select(this.getCriteriaBuilder().countDistinct(root));
 		
 		if (request.getColumns() != null && !request.getColumns().isEmpty()) {
 			
 			List<Column> searchableColumns = request.getColumns().stream().filter(tableColumn -> tableColumn.getSearchable()).collect(Collectors.toList());
-			ArrayList<Predicate> filters = this.createFilters(searchableColumns, root);
+			ArrayList<Predicate> whereConditions = this.createFilters(searchableColumns, root);
 			
-			if (filters != null && !filters.isEmpty())
-				query.where(this.criteriaBuilder.or( filters.toArray(new Predicate[0])));
+			if (whereConditions != null && !whereConditions.isEmpty())
+				query.where(this.criteriaBuilder.or(whereConditions.toArray(new Predicate[whereConditions.size()])));
 		}
 		
 		return this.entityManager.createQuery(query).getSingleResult();
@@ -229,7 +282,7 @@ public class DataTableQueryBuilder<T> {
 	private CriteriaBuilder getCriteriaBuilder() {
 		
 		if (this.criteriaBuilder == null)
-			this.criteriaBuilder = entityManager.getCriteriaBuilder();
+			this.criteriaBuilder = this.entityManager.getCriteriaBuilder();
 		
 		return this.criteriaBuilder;
 	}
